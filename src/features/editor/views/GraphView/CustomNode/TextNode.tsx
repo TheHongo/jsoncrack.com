@@ -5,6 +5,8 @@ import useConfig from "../../../../../store/useConfig";
 import { isContentImage } from "../lib/utils/calculateNodeSize";
 import { TextRenderer } from "./TextRenderer";
 import * as Styled from "./styles";
+import { useModal } from "../../../../../store/useModal";
+import useGraph from "../stores/useGraph";
 
 const StyledTextNodeWrapper = styled.span<{ $isParent: boolean }>`
   display: flex;
@@ -14,6 +16,7 @@ const StyledTextNodeWrapper = styled.span<{ $isParent: boolean }>`
   width: 100%;
   overflow: hidden;
   padding: 0 10px;
+  pointer-events: all;
 `;
 
 const StyledImageWrapper = styled.div`
@@ -31,6 +34,8 @@ const Node = ({ node, x, y }: CustomNodeProps) => {
   const imagePreviewEnabled = useConfig(state => state.imagePreviewEnabled);
   const isImage = imagePreviewEnabled && isContentImage(JSON.stringify(text[0].value));
   const value = text[0].value;
+  const setVisible = useModal(state => state.setVisible);
+  const setSelectedNode = useGraph(state => state.setSelectedNode);
 
   return (
     <Styled.StyledForeignObject
@@ -52,7 +57,28 @@ const Node = ({ node, x, y }: CustomNodeProps) => {
           $isParent={false}
         >
           <Styled.StyledKey $value={value} $type={typeof text[0].value}>
-            <TextRenderer>{value}</TextRenderer>
+            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <TextRenderer style={{ flex: 1 }}>{value}</TextRenderer>
+              <button
+                aria-label="Edit node"
+                title="Edit"
+                onClick={e => {
+                  e.stopPropagation();
+                  setSelectedNode(node);
+                  setVisible("NodeEditModal", true);
+                }}
+                style={{
+                  marginLeft: 8,
+                  background: "transparent",
+                  border: "none",
+                  color: "inherit",
+                  cursor: "pointer",
+                  pointerEvents: "all",
+                }}
+              >
+                ✏️
+              </button>
+            </div>
           </Styled.StyledKey>
         </StyledTextNodeWrapper>
       )}

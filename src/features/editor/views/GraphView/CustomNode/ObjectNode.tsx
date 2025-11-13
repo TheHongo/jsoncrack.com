@@ -4,15 +4,18 @@ import { NODE_DIMENSIONS } from "../../../../../constants/graph";
 import type { NodeData } from "../../../../../types/graph";
 import { TextRenderer } from "./TextRenderer";
 import * as Styled from "./styles";
+import { useModal } from "../../../../../store/useModal";
+import useGraph from "../stores/useGraph";
 
 type RowProps = {
   row: NodeData["text"][number];
   x: number;
   y: number;
   index: number;
+  nodePath?: NodeData["path"];
 };
 
-const Row = ({ row, x, y, index }: RowProps) => {
+const Row = ({ row, x, y, index, nodePath }: RowProps) => {
   const rowPosition = index * NODE_DIMENSIONS.ROW_HEIGHT;
 
   const getRowText = () => {
@@ -28,11 +31,15 @@ const Row = ({ row, x, y, index }: RowProps) => {
       data-x={x}
       data-y={y + rowPosition}
     >
-      <Styled.StyledKey $type="object">{row.key}: </Styled.StyledKey>
-      <TextRenderer>{getRowText()}</TextRenderer>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 8 }}>
+        <Styled.StyledKey $type="object">{row.key}: </Styled.StyledKey>
+        <TextRenderer>{getRowText()}</TextRenderer>
+      </div>
     </Styled.StyledRow>
   );
 };
+
+// Single node-level editor will be rendered at the top of the node
 
 const Node = ({ node, x, y }: CustomNodeProps) => (
   <Styled.StyledForeignObject
@@ -43,9 +50,30 @@ const Node = ({ node, x, y }: CustomNodeProps) => (
     y={0}
     $isObject
   >
-    {node.text.map((row, index) => (
-      <Row key={`${node.id}-${index}`} row={row} x={x} y={y} index={index} />
-    ))}
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div style={{ position: "absolute", top: 2, right: 4, zIndex: 5, pointerEvents: "all" }}>
+        <button
+          aria-label="Edit node"
+          title="Edit node"
+          onClick={e => {
+            e.stopPropagation();
+            const setVisible = useModal.getState().setVisible;
+            const setSelectedNode = useGraph.getState().setSelectedNode;
+            const setEditTarget = useGraph.getState().setEditTarget;
+            setSelectedNode(node);
+            setEditTarget(null);
+            setVisible("NodeEditModal", true);
+          }}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: "inherit" }}
+        >
+          ✏️
+        </button>
+      </div>
+
+      {node.text.map((row, index) => (
+        <Row key={`${node.id}-${index}`} row={row} x={x} y={y} index={index} nodePath={node.path} />
+      ))}
+    </div>
   </Styled.StyledForeignObject>
 );
 
